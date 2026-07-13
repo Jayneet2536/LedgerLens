@@ -1,0 +1,2 @@
+qwen/qwen3-32b
+openai/gpt-oss-120b
