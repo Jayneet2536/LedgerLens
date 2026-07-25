@@ -1,4 +1,73 @@
-# RAG Strategy Comparison Results
+# LedgerLens
+
+LedgerLens is an advanced Retrieval-Augmented Generation (RAG) pipeline designed specifically for financial documents, such as 10-K filings. It leverages multiple extraction, chunking, embedding, and retrieval strategies to accurately answer complex financial questions, ensuring context like tables and forward-looking statements are preserved.
+
+## Features
+
+- **Document Parsing**: Parses PDFs utilizing `UnstructuredPDFLoader` to retain structural elements.
+- **Multiple Chunking Strategies**: Choose between `naive`, `recursive`, `markdown_structural`, `markdown_hierarchical`, `semantic`, and `table_page` chunking depending on the complexity of your document.
+- **Advanced Retrieval Options**: Features multiple retrieval strategies including standard similarity, MMR (Maximal Marginal Relevance), Hybrid RRF (Reciprocal Rank Fusion with BM25), metadata filtering, and re-ranking.
+- **State-of-the-art Models**: Employs Voyage AI for embeddings and Groq for blazing-fast inference with LLMs like Qwen or Llama 3.
+- **API & Frontend**: Includes a FastAPI backend with state management for dynamic re-indexing and strategy swapping, along with a Vite-based frontend.
+- **Comprehensive Testing**: Run automated smoke tests to compare strategy performance and validate responses.
+
+## Project Structure
+
+- `main.py` - Handles document ingestion, chunking, and embedding into ChromaDB.
+- `retrieval_main.py` - Standalone retrieval execution for testing queries.
+- `smoke_test.py` - Comprehensive smoke tests for chunking, retrieval, and end-to-end RAG pipeline.
+- `config.py` - Configuration settings for models, chunking strategies, and database parameters.
+- `api/` - FastAPI backend application to serve the RAG system and manage state.
+- `frontend/` - Vite-based web interface for interacting with LedgerLens.
+- `chunking/`, `embeddings/`, `retrieval/`, `vectorstore/` - Core modules for the RAG pipeline.
+
+## Getting Started
+
+### 1. Environment Setup
+
+Create a `.env` file in the root directory and add your API keys:
+
+```env
+VOYAGE_API_KEY="your-voyage-key-here"
+GROQ_API_KEY="your-groq-key-here"
+GOOGLE_API_KEY="your-google-api-key-here"
+CHROMA_HOST="localhost"
+CHROMA_PORT=8000
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Ingest Data
+
+Drop your target PDF (e.g., `amzn.pdf`) into the project directory and run the ingestion pipeline. You can modify `config.py` to adjust chunking parameters and metadata.
+
+```bash
+python main.py
+```
+
+### 4. Run Smoke Tests
+
+Ensure all components and strategies are functioning correctly:
+
+```bash
+python smoke_test.py
+```
+
+### 5. Start the API
+
+Start the backend API to interact with the indexed documents:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+---
+
+## RAG Strategy Comparison Results
 
 Below is a comparison of two different Retrieval-Augmented Generation configurations using Amazon's 10-K document (amzn.pdf). 
 
