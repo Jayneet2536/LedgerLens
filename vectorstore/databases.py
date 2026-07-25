@@ -2,19 +2,35 @@
 import chromadb
 from langchain_chroma import Chroma
 
+
 class VectorStoreFactory:
     @staticmethod
     def create_index(documents, embedding_model, config: dict):
         if config["vector_store"] == "chromadb":
             chroma_client = chromadb.HttpClient(
-                host=config["chroma_host"], 
+                host=config["chroma_host"],
                 port=config["chroma_port"]
             )
+            collection_name = config["collection_name"]
+
+            # Each ingestion run represents a fresh build of the index for
+            # whatever chunking/config is currently active — not an
+            # incremental append. Chroma.from_documents() get-or-creates the
+            # collection by name and just adds to it if it already exists,
+            # with no deduplication (fresh random IDs every time). Without
+            # this delete, re-running ingestion — or switching chunking
+            # strategies to compare them — silently piles new chunks on top
+            # of whatever was already indexed.
+            try:
+                chroma_client.delete_collection(name=collection_name)
+            except Exception:
+                pass  # no existing collection yet (first run) — fine
+
             return Chroma.from_documents(
                 documents=documents,
                 embedding=embedding_model,
                 client=chroma_client,
-                collection_name="financial_10k_collection"
+                collection_name=collection_name
             )
         else:
             raise ValueError("Unsupported vector store")
@@ -24,12 +40,12 @@ class VectorStoreFactory:
         """Loads the existing database for retrieval without inserting new data."""
         if config["vector_store"] == "chromadb":
             chroma_client = chromadb.HttpClient(
-                host=config["chroma_host"], 
+                host=config["chroma_host"],
                 port=config["chroma_port"]
             )
             return Chroma(
                 client=chroma_client,
-                collection_name="financial_10k_collection",
+                collection_name=config["collection_name"],
                 embedding_function=embedding_model
             )
         else:

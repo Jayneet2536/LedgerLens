@@ -1,0 +1,102 @@
+[
+    {
+        "question": "As of December 31, 2025, approximately how many full-time and part-time employees did Amazon report, and how does the company supplement this workforce?",
+        "ground_truth": "As of December 31, 2025, Amazon employed approximately 1,576,000 full-time and part-time employees, and additionally uses independent contractors and temporary personnel to supplement its workforce."
+    },
+    {
+        "question": "How many Amazon employees worldwide have participated in the Amazon Career Choice program, and what does this program provide?",
+        "ground_truth": "Over 300,000 Amazon employees around the world have participated in Career Choice, which provides education funding for eligible employees as part of Amazon's talent development initiatives."
+    },
+    {
+        "question": "Into how many operating segments has Amazon organized its business, and what are they named?",
+        "ground_truth": "Amazon has organized its operations into three segments: North America, International, and Amazon Web Services (AWS)."
+    },
+    {
+        "question": "What four AWS-related positions did Matthew S. Garman hold prior to becoming CEO of Amazon Web Services in June 2024?",
+        "ground_truth": "Prior to becoming CEO of AWS in June 2024, Matthew S. Garman served as Senior Vice President, Amazon Web Services (February 2021–June 2024); Vice President, Marketing, Sales and Support of Amazon Web Services (January 2020–February 2021); Vice President, AWS Compute Services (September 2018–January 2020); and Vice President, EC2 (December 2012–September 2018)."
+    },
+    {
+        "question": "In its list of ten categories of current and potential competitors, what specific healthcare-related competitor category does Amazon identify as item (10)?",
+        "ground_truth": "Item (10) in Amazon's list of competitors is 'providers of virtual or in-person healthcare services.'"
+    },
+    {
+        "question": "What specific tax position has the Indian tax authority (ITA) asserted regarding Amazon's cloud services, and what is Amazon's stance on it?",
+        "ground_truth": "The Indian tax authority has asserted that tax applies to cloud services fees paid to Amazon in the U.S. Amazon disputes this position, is contesting it, and expects to recoup taxes paid, though it may need to remit taxes related to this matter until it is resolved."
+    },
+    {
+        "question": "Which four foreign currencies does Amazon specifically name as currencies in which it holds cash equivalents and/or marketable securities, per the Foreign Exchange Risk factor?",
+        "ground_truth": "Amazon holds cash equivalents and/or marketable securities in foreign currencies such as British Pounds, Canadian Dollars, Euros, and Japanese Yen."
+    },
+    {
+        "question": "According to the Supplier Relationships risk factor, what specific component tied to AI infrastructure does Amazon rely on a limited group of suppliers for?",
+        "ground_truth": "Amazon relies on a limited group of suppliers for semiconductor products, including products related to artificial intelligence infrastructure such as graphics processing units (GPUs), and constraints on their availability could adversely affect its ability to develop and operate AI technologies, products, or services."
+    },
+    {
+        "question": "Regarding the India-specific regulatory risk, what type of ownership interest does Amazon hold in the entity that acts as a third-party seller on the www.amazon.in marketplace?",
+        "ground_truth": "Amazon holds an indirect minority interest in an entity that is a third-party seller on the www.amazon.in marketplace, due to Indian government restrictions on foreign ownership of companies involved in online multi-brand retail trading."
+    },
+    {
+        "question": "Under the Payments-Related Risks factor, what specific consequences could Amazon face with card issuing banks if a data security breach compromises payment card compliance?",
+        "ground_truth": "Amazon could be liable for card issuing banks' costs, subject to fines and higher transaction fees, and could lose its ability to accept credit and debit card payments, process electronic funds transfers, or facilitate other types of online payments."
+    },
+    {
+        "question": "What specific civil and criminal consequences does Amazon identify as risks from violations related to its government contracts and procurement regulations?",
+        "ground_truth": "Violations could result in various civil and criminal penalties and administrative sanctions, including termination of contract, refunding or suspending of payments, forfeiture of profits, payment of fines, and suspension or debarment from future government business."
+    },
+    {
+        "question": "In the risk factor on losing key senior management, what specific type of insurance does Amazon disclose it does NOT maintain?",
+        "ground_truth": "Amazon discloses that it does not have 'key person' life insurance policies covering its senior management, including its President and CEO."
+    },
+    {
+        "question": "How does the A-to-z Guarantee program, described in the seller fraud risk factor, create a growing financial exposure for Amazon?",
+        "ground_truth": "Under the A-to-z Guarantee, Amazon may reimburse customers for payments up to certain limits when sellers commit fraud or fail to deliver as described, and as third-party seller sales grow, the cost of this program will increase and could negatively affect operating results."
+    },
+    {
+        "question": "What were Amazon's cash capital expenditures in 2024 versus 2025, and what does management expect for 2026?",
+        "ground_truth": "Cash capital expenditures were $77.7 billion in 2024 and $128.3 billion in 2025, both of which management expects to increase further in 2026."
+    },
+    {
+        "question": "What was Amazon's free cash flow for 2025 compared to 2024, and how is it reconciled to operating cash flow?",
+        "ground_truth": "Free cash flow was $11,194 million in 2025, down from $38,219 million in 2024. It is calculated as net cash provided by operating activities ($139,514 million in 2025) minus purchases of property and equipment, net of proceeds from sales and incentives ($128,320 million in 2025)."
+    },
+    {
+        "question": "What two specific one-time charges did Amazon disclose as impacting its 2025 operating income, related to a legal settlement and workforce reductions?",
+        "ground_truth": "Operating income for 2025 included $2.5 billion recorded in Q3 2025 related to the settlement of a lawsuit with the FTC, and approximately $2.7 billion of estimated severance costs primarily related to planned role eliminations, of which $1.8 billion was recorded in Q3 2025."
+    },
+    {
+        "question": "According to the Liquidity and Capital Resources discussion, how much did Amazon invest in convertible notes from Anthropic during 2025?",
+        "ground_truth": "Amazon invested $2.7 billion in convertible notes from Anthropic during 2025, as part of $3.8 billion in total cash payments, net of acquired cash, for acquisition and other investment activity that year."
+    },
+    {
+        "question": "What is Amazon's First Quarter 2026 guidance for net sales and operating income, and what foreign exchange assumption underlies the net sales guidance?",
+        "ground_truth": "For Q1 2026, net sales are expected to be between $173.5 billion and $178.5 billion (11%-15% growth vs. Q1 2025), anticipating a favorable impact of approximately 180 basis points from foreign exchange rates. Operating income is expected to be between $16.5 billion and $21.5 billion, compared with $18.4 billion in Q1 2025."
+    },
+    {
+        "question": "Per the Effect of Foreign Exchange Rates table in the MD&A, what would Amazon's 2025 net sales have been at prior year exchange rates, compared to the as-reported figure?",
+        "ground_truth": "At prior year exchange rates, 2025 net sales would have been $712,515 million, compared to the as-reported figure of $716,924 million, reflecting a negative exchange rate effect of $(4,409) million."
+    },
+    {
+        "question": "As disclosed in the Critical Accounting Estimates section, what additional cost of sales would result from every 1% of additional inventory valuation allowance as of December 31, 2025?",
+        "ground_truth": "For every 1% of additional inventory valuation allowance as of December 31, 2025, Amazon would have recorded an additional cost of sales of approximately $405 million."
+    },
+    {
+        "question": "What was Amazon's diluted earnings per share for fiscal year 2025, and how many diluted weighted-average shares were used in that computation?",
+        "ground_truth": "Amazon's diluted earnings per share for 2025 was $7.17, based on 10,827 million diluted weighted-average shares used in the computation."
+    },
+    {
+        "question": "In the Kove IO, Inc. patent infringement litigation against Amazon Web Services, what jury verdict and pre-judgment interest amounts were awarded?",
+        "ground_truth": "In April 2024, a jury found that Amazon infringed the asserted patents and awarded Kove $525 million in damages; in August 2024, the court awarded Kove an additional $148 million in pre-judgment interest."
+    },
+    {
+        "question": "What fine did the Luxembourg National Commission for Data Protection (CNPD) impose on Amazon Europe Core S.à r.l., and what happened with Amazon's subsequent appeals?",
+        "ground_truth": "The CNPD imposed a fine of €746 million for alleged non-compliance with the EU General Data Protection Regulation. In March 2025, the Luxembourg Administrative Court dismissed Amazon's appeal, and in April 2025, Amazon appealed that decision to the Luxembourg Administrative Court of Appeal."
+    },
+    {
+        "question": "What was Amazon's North America segment goodwill balance as of December 31, 2025, and how did it change from the prior year?",
+        "ground_truth": "North America segment goodwill was $19,363 million as of December 31, 2025, up from $19,289 million as of December 31, 2024, an increase driven by $25 million of acquisition activity and $49 million of other adjustments (primarily foreign exchange changes)."
+    },
+    {
+        "question": "What was Amazon's effective tax rate in 2025 compared to 2024, and what were the two primary drivers of the change according to Note 9?",
+        "ground_truth": "Amazon's effective tax rate was 19.6% in 2025 compared to 13.5% in 2024. The increase was primarily due to an increase in pretax income and a decrease in the foreign income deduction resulting from the effects of the 2025 Tax Act."
+    }
+]
