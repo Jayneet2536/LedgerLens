@@ -1,30 +1,40 @@
 # LedgerLens
 
-LedgerLens is an advanced Retrieval-Augmented Generation (RAG) pipeline designed specifically for financial documents, such as 10-K filings. It leverages multiple extraction, chunking, embedding, and retrieval strategies to accurately answer complex financial questions, ensuring context like tables and forward-looking statements are preserved.
+LedgerLens is an advanced Retrieval-Augmented Generation (RAG) pipeline designed specifically for answering complex queries based on financial documents, such as 10-K filings. 
 
-## Features
+It implements a comprehensive architecture supporting multiple chunking methodologies, hybrid retrieval strategies, and a FastAPI backend with a React (Vite) frontend.
 
-- **Document Parsing**: Parses PDFs utilizing `UnstructuredPDFLoader` to retain structural elements.
-- **Multiple Chunking Strategies**: Choose between `naive`, `recursive`, `markdown_structural`, `markdown_hierarchical`, `semantic`, and `table_page` chunking depending on the complexity of your document.
-- **Advanced Retrieval Options**: Features multiple retrieval strategies including standard similarity, MMR (Maximal Marginal Relevance), Hybrid RRF (Reciprocal Rank Fusion with BM25), metadata filtering, and re-ranking.
-- **State-of-the-art Models**: Employs Voyage AI for embeddings and Groq for blazing-fast inference with LLMs like Qwen or Llama 3.
-- **API & Frontend**: Includes a FastAPI backend with state management for dynamic re-indexing and strategy swapping, along with a Vite-based frontend.
-- **Comprehensive Testing**: Run automated smoke tests to compare strategy performance and validate responses.
+## 🌟 Key Features
 
-## Project Structure
+- **Robust Document Parsing:** Utilizes `UnstructuredPDFLoader` to accurately parse PDFs while preserving structural elements like tables and headers.
+- **Multiple Chunking Strategies:** Choose from `naive`, `recursive`, `markdown_structural`, `markdown_hierarchical`, `semantic`, and `table_page` depending on the complexity of your document.
+- **Advanced Retrieval Options:** Includes standard similarity, MMR (Maximal Marginal Relevance), Hybrid RRF (Reciprocal Rank Fusion with BM25), metadata filtering, and semantic re-ranking.
+- **State-of-the-Art Models:** Powered by Voyage AI for embeddings and Groq (Qwen / Llama 3) for blazing-fast inference.
+- **Full-Stack Application:** Comes with a FastAPI backend for state management, dynamic re-indexing, and strategy swapping, along with a modern Vite/React-based frontend interface.
+- **Comprehensive Testing:** Automated smoke tests (`smoke_test.py`) to benchmark and validate different chunking and retrieval strategies.
 
-- `main.py` - Handles document ingestion, chunking, and embedding into ChromaDB.
-- `retrieval_main.py` - Standalone retrieval execution for testing queries.
-- `smoke_test.py` - Comprehensive smoke tests for chunking, retrieval, and end-to-end RAG pipeline.
-- `config.py` - Configuration settings for models, chunking strategies, and database parameters.
-- `api/` - FastAPI backend application to serve the RAG system and manage state.
-- `frontend/` - Vite-based web interface for interacting with LedgerLens.
-- `chunking/`, `embeddings/`, `retrieval/`, `vectorstore/` - Core modules for the RAG pipeline.
+## 📂 Project Structure
 
-## Getting Started
+- `main.py`: Handles document ingestion, chunking, and embedding into ChromaDB.
+- `retrieval_main.py`: Standalone script for executing retrieval and testing queries.
+- `smoke_test.py`: Comprehensive test suite for the end-to-end RAG pipeline.
+- `config.py`: Centralized configuration for models, chunking strategies, and database parameters.
+- `api/`: FastAPI backend application.
+- `frontend/`: Vite + React web interface.
+- `chunking/`, `embeddings/`, `retrieval/`, `vectorstore/`: Core modules of the RAG pipeline.
 
-### 1. Environment Setup
+---
 
+## 🚀 Setup & Installation Instructions
+
+Follow these steps to set up the project locally.
+
+### 1. Prerequisites
+- **Python 3.9+**
+- **Node.js & npm** (for the frontend)
+- **Docker & Docker Compose** (to run the ChromaDB vector database)
+
+### 2. Environment Configuration
 Create a `.env` file in the root directory and add your API keys:
 
 ```env
@@ -35,49 +45,50 @@ CHROMA_HOST="localhost"
 CHROMA_PORT=8000
 ```
 
-### 2. Install Dependencies
+### 3. Start the Vector Database
+We use ChromaDB for vector storage. Start it using the provided Docker Compose file:
+```bash
+docker-compose up -d
+```
+*(This will start ChromaDB on port 8000 and persist data to `./chroma_data`)*
 
+### 4. Install Python Dependencies
+Set up your virtual environment (optional but recommended) and install the required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Ingest Data
-
-Drop your target PDF (e.g., `amzn.pdf`) into the project directory and run the ingestion pipeline. You can modify `config.py` to adjust chunking parameters and metadata.
-
+### 5. Ingest Data
+Drop your target PDF (e.g., `amzn.pdf`) into the project directory and run the ingestion script to chunk the document and store the embeddings in ChromaDB:
 ```bash
 python main.py
 ```
+*(Note: You can tweak chunking parameters and strategies inside `config.py`)*
 
-### 4. Run Smoke Tests
+### 6. Run the Backend API
+Start the FastAPI server:
+```bash
+uvicorn api.main:app --reload
+```
+*(The API will be available at `http://localhost:8000`)*
 
-Ensure all components and strategies are functioning correctly:
+### 7. Run the Frontend
+Open a new terminal window, navigate to the frontend directory, install dependencies, and start the development server:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*(The frontend will typically be accessible at `http://localhost:5173`)*
+
+---
+
+## 🧪 Testing
+
+To ensure all components (chunking, retrieval, generation) are functioning correctly, run the smoke tests:
 
 ```bash
 python smoke_test.py
 ```
 
-### 5. Start the API
-
-Start the backend API to interact with the indexed documents:
-
-```bash
-uvicorn api.main:app --reload
-```
-
----
-
-## RAG Strategy Comparison Results
-
-Below is a comparison of two different Retrieval-Augmented Generation configurations using Amazon's 10-K document (amzn.pdf). 
-
-- **Config A (Baseline):** `markdown_structural` chunking + `hybrid_rrf` retrieval.
-- **Config B (Enhanced):** `semantic` chunking + `hybrid_rrf` retrieval.
-
-| Question | Config A (Vanilla) Result | Config B (Hybrid) Result | Winner |
-|---|---|---|---|
-| "How many employees did Amazon have as of December 31, 2025?" | Retrieved a broad section on Human Capital. Answered correctly (1.57 million). | Retrieved a highly targeted chunk on workforce size. Answered correctly. | Tie |
-| "What were Amazon's cash capital expenditures in 2024 vs 2025, and what does management expect for 2026?" | Retrieved chunks missing 2026 guidance due to hard structural boundaries. Answered only for 2024/2025. | Retrieved a semantically aligned chunk containing past capex and 2026 expectations. Answered fully. | Config B |
-| "What is Amazon's Q1 2026 guidance for net sales and operating income?" | Struggled with header splits, separating net sales from operating income. Missed operating income guidance. | Semantic chunking kept the forward-looking statements together as one cohesive topic. Answered correctly. | Config B |
-| "What fine did the CNPD impose on Amazon Europe Core S.à r.l., and what happened with the appeals?" | Found the exact legal chunk in both. Both answered correctly. | Found the exact legal chunk in both. Both answered correctly. | Tie |
-| "What was Amazon's effective tax rate in 2025 vs 2024, and what were the two primary drivers of change?" | Chunking split the tax rate figures from the driver explanations. Answer was incomplete. | Semantic grouping kept the tax rates and the 2025 Tax Act driver together. Answered fully. | Config B |
+This will run a series of predefined queries against different RAG strategies (e.g., Structural vs. Semantic chunking) and output the comparison results to the console.

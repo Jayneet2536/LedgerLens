@@ -71,6 +71,7 @@ class ApiServiceState:
         documents: list[Document] = []
         retriever = None
         detail = None
+        auto_bootstrap = False
 
         try:
             vector_db, documents, retriever = self._load_index_and_retriever(
@@ -78,7 +79,8 @@ class ApiServiceState:
                 self.config,
             )
             if not documents:
-                detail = "No indexed documents found. Trigger /ingest first."
+                detail = "No index found — automatically building index from default configuration."
+                auto_bootstrap = True
         except Exception as exc:
             detail = f"No index loaded: {exc}"
 
@@ -90,6 +92,19 @@ class ApiServiceState:
             self.retriever = retriever
             self.index_loaded = retriever is not None
             self.status_detail = detail
+
+        if auto_bootstrap:
+            # Note: This in-memory state is per-process. If run with multiple uvicorn workers,
+            # each worker gets its own ApiServiceState and would race against the others here.
+            try:
+                next_config = self.prepare_reindex_config(
+                    chunking_strategy=None, chunk_size=None, chunk_overlap=None
+                )
+                with self._lock:
+                    self.status_detail = "No index found — automatically building index from default configuration."
+                threading.Thread(target=self.run_reindex, args=(next_config,), daemon=True).start()
+            except ReindexInProgressError:
+                pass
 
     def health(self) -> HealthResponse:
         with self._lock:
