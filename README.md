@@ -11,13 +11,11 @@ It implements a comprehensive architecture supporting multiple chunking methodol
 - **Advanced Retrieval Options:** Includes standard similarity, MMR (Maximal Marginal Relevance), Hybrid RRF (Reciprocal Rank Fusion with BM25), metadata filtering, and semantic re-ranking.
 - **State-of-the-Art Models:** Powered by Voyage AI for embeddings and Groq (Qwen / Llama 3) for blazing-fast inference.
 - **Full-Stack Application:** Comes with a FastAPI backend for state management, dynamic re-indexing, and strategy swapping, along with a modern Vite/React-based frontend interface.
-- **Comprehensive Testing:** Automated smoke tests (`smoke_test.py`) to benchmark and validate different chunking and retrieval strategies.
 
 ## 📂 Project Structure
 
 - `main.py`: Handles document ingestion, chunking, and embedding into ChromaDB.
 - `retrieval_main.py`: Standalone script for executing retrieval and testing queries.
-- `smoke_test.py`: Comprehensive test suite for the end-to-end RAG pipeline.
 - `config.py`: Centralized configuration for models, chunking strategies, and database parameters.
 - `api/`: FastAPI backend application.
 - `frontend/`: Vite + React web interface.
@@ -82,13 +80,3 @@ npm run dev
 *(The frontend will typically be accessible at `http://localhost:5173`)*
 
 ---
-
-## 🧪 Testing
-
-To ensure all components (chunking, retrieval, generation) are functioning correctly, run the smoke tests:
-
-```bash
-python smoke_test.py
-```
-
-This will run a series of predefined queries against different RAG strategies (e.g., Structural vs. Semantic chunking) and output the comparison results to the console.
