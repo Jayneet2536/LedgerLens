@@ -319,6 +319,8 @@ class ApiServiceState:
     def _build_prompt(self, context: str, question: str) -> str:
         return (
             "You are a senior financial analyst. Answer the question based ONLY on the following context.\n\n"
+            "Format the answer in Markdown. Put each heading, list item, and table row on its own line. "
+            "Tables must have a header row followed by a separator row. Use blank lines between sections.\n\n"
             f"Context:\n{context}\n\n"
             f"Question: {question}\n"
             "Answer:"

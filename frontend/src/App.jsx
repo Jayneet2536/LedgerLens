@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import MessageContent from "./MessageContent";
 import {
   AlertCircle,
   Bot,
@@ -619,86 +620,6 @@ function SourceCard({ source, index }) {
       )}
     </article>
   );
-}
-
-function MessageContent({ content }) {
-  const blocks = parseMarkdownBlocks(content);
-
-  return (
-    <div className="message-content">
-      {blocks.map((block, index) => {
-        if (block.type === "list") {
-          return (
-            <ul key={index}>
-              {block.items.map((item, itemIndex) => (
-                <li key={itemIndex}>{renderInlineMarkdown(item)}</li>
-              ))}
-            </ul>
-          );
-        }
-
-        return <p key={index}>{renderInlineMarkdown(block.text)}</p>;
-      })}
-    </div>
-  );
-}
-
-function parseMarkdownBlocks(content) {
-  const lines = String(content || "").split(/\r?\n/);
-  const blocks = [];
-  let paragraph = [];
-  let listItems = [];
-
-  function flushParagraph() {
-    if (paragraph.length > 0) {
-      blocks.push({ type: "paragraph", text: paragraph.join(" ") });
-      paragraph = [];
-    }
-  }
-
-  function flushList() {
-    if (listItems.length > 0) {
-      blocks.push({ type: "list", items: listItems });
-      listItems = [];
-    }
-  }
-
-  lines.forEach((line) => {
-    const trimmed = line.trim();
-    const listMatch = /^[-*]\s+(.+)$/.exec(trimmed);
-
-    if (!trimmed) {
-      flushParagraph();
-      flushList();
-      return;
-    }
-
-    if (listMatch) {
-      flushParagraph();
-      listItems.push(listMatch[1]);
-      return;
-    }
-
-    flushList();
-    paragraph.push(trimmed);
-  });
-
-  flushParagraph();
-  flushList();
-
-  return blocks.length > 0 ? blocks : [{ type: "paragraph", text: "" }];
-}
-
-function renderInlineMarkdown(text) {
-  const parts = String(text).split(/(\*\*[^*]+\*\*)/g);
-
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={index}>{part.slice(2, -2)}</strong>;
-    }
-
-    return part;
-  });
 }
 
 function formatLatency(latencyMs) {
