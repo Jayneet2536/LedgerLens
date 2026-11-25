@@ -20,14 +20,10 @@ def main():
             print("Waiting for Chroma...", flush=True)
             time.sleep(2)
 
-    command = [
-        "uvicorn", "api.app:app", "--host", "0.0.0.0",
-        "--port", os.environ.get("PORT", "8000"), "--workers", "1",
-    ]
-    root_path = os.environ.get("ROOT_PATH", "").rstrip("/")
-    if root_path:
-        command.extend(["--root-path", root_path])
-    os.execvp(command[0], command)
+    os.execvp("uvicorn", [
+        "uvicorn", "api.app:app", "--host", "0.0.0.0", "--port", "8000",
+        "--workers", "1", "--root-path", "/api",
+    ])
 
 
 if __name__ == "__main__":

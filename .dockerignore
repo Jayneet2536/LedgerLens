@@ -16,4 +16,3 @@ chroma_data
 **/*.pdf
 **/*.log
 .pytest_cache
-!amzn.pdf

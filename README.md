@@ -1,4 +1,4 @@
-﻿# LedgerLens
+# LedgerLens
 
 LedgerLens answers questions about financial PDFs using a React frontend, FastAPI, Voyage embeddings, Groq, and ChromaDB. It supports multiple chunking and retrieval strategies, including hybrid BM25/vector retrieval and local cross-encoder reranking.
 
@@ -103,50 +103,6 @@ npm run dev
 The frontend defaults to `http://127.0.0.1:8000` for local development. `frontend/.env.example` documents the optional build-time override. Docker always builds with the same-origin `/api` URL.
 
 `requirements-runtime.txt` contains the app dependencies used by Docker. `requirements.txt` additionally installs the optional evaluation and other provider integrations.
-
-## Student demo: Railway backend + Vercel frontend
-
-The repository includes `Dockerfile.railway`, `railway.toml`, and `frontend/vercel.json`. Railway uses a separate image with the bundled PDF and no provider-specific build cache mounts. Startup waits for Chroma, honors `PORT`, and serves the API directly at `/health`, `/chat`, and `/docs`. Local Compose sets `ROOT_PATH=/api` for its Nginx proxy.
-
-### 1. Push to GitHub
-
-Commit and push the changes, including `amzn.pdf`. Keep `.env` untracked; `git check-ignore .env` should print `.env`.
-
-### 2. Deploy ChromaDB on Railway
-
-Create an empty Railway project, then add a Docker-image service using `chromadb/chroma:1.5.9`. Name the service `chromadb`. Add `CHROMA_PERSIST_PATH=/data` and attach a volume mounted at `/data`. Deploy and wait until the database starts. Do not give this service a public domain.
-
-### 3. Deploy the API on Railway
-
-In the same project and environment, add a service from this GitHub repository. Name it `ledgerlens-api`; leave the root directory at the repository root. Railway reads `railway.toml` to select `Dockerfile.railway`, one replica, and the `/health` health check. Leave the custom start command empty.
-
-Add these service variables (replace the two keys):
-
-```env
-VOYAGE_API_KEY=your-real-voyage-key
-GROQ_API_KEY=your-real-groq-key
-CHROMA_HOST=chromadb.railway.internal
-CHROMA_PORT=8000
-PORT=8000
-```
-
-If you choose another database service name, use its actual private hostname for `CHROMA_HOST`. Do not copy the local `.env` wholesale: its `CHROMA_HOST`, `PDF_FILE`, or `ROOT_PATH` may be inappropriate for cloud deployment. `PDF_PATH` and `HF_HOME` are already set in the Railway image. Keep `ROOT_PATH` unset on Railway.
-
-Deploy, then generate a public domain for the API in Settings > Networking, targeting port 8000. Open `https://YOUR-BACKEND-DOMAIN/health` and `/docs`. First-time indexing starts automatically. The UI can connect while it builds; wait for `index_loaded: true` before chatting. The Railway database starts fresh; your local Docker volume is not uploaded.
-
-### 4. Deploy the frontend on Vercel
-
-Import the same GitHub repository. Set Root Directory to `frontend`. The included `vercel.json` selects Vite, `npm ci`, `npm run build`, and the `dist` output directory.
-
-Set `VITE_API_URL=https://YOUR-BACKEND-DOMAIN` for the deployment environment, with no `/api` suffix, then deploy. Put provider API keys only in Railway. If the backend URL changes, update this variable and redeploy Vercel.
-
-Optionally set `CORS_ORIGINS=https://YOUR-PROJECT.vercel.app` on the Railway API and redeploy it. Multiple allowed origins can be comma-separated. Without this variable, the existing wildcard behavior is retained.
-
-### 5. Check the demo
-
-Open the Vercel URL, send a question, change retrieval modes, and rebuild the index while continuing to chat. The local reranker downloads its model the first time it is selected; its cache is temporary on Railway unless additional storage is configured. The Chroma volume retains completed indexes and their active pointer across API redeployments.
-
-Use Railway's trial allocation for the demonstration and monitor remaining credits and memory in its dashboard. If outgoing provider requests are blocked on a Limited Trial, connect/verify your GitHub account. An OOM/exit 137 indicates the workload exceeded the service's memory allowance. Background jobs run in the API process and stop on redeployment, so avoid redeploying during your presentation's reindex demo.
 
 ## Repository layout
 

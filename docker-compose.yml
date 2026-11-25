@@ -16,7 +16,6 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:?Set GROQ_API_KEY in the root .env file}
       CHROMA_HOST: chromadb
       CHROMA_PORT: "8000"
-      ROOT_PATH: /api
       PDF_PATH: /app/documents/source.pdf
       HF_HOME: /home/app/.cache/huggingface
     volumes:
