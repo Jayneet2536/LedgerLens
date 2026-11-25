@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,7 +41,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "*").split(",") if origin.strip()],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -99,7 +100,7 @@ def set_retrieval_strategy(
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
-@app.post("/reindex", response_model=ReindexAcceptedResponse)
+@app.post("/reindex", response_model=ReindexAcceptedResponse, status_code=202)
 def reindex(
     request: ReindexRequest,
     background_tasks: BackgroundTasks,
@@ -123,7 +124,7 @@ def reindex(
     )
 
 
-@app.post("/ingest", response_model=ReindexAcceptedResponse)
+@app.post("/ingest", response_model=ReindexAcceptedResponse, status_code=202)
 def ingest(
     background_tasks: BackgroundTasks,
     state: ApiServiceState = Depends(get_service_state),

@@ -1,0 +1,38 @@
+FROM python:3.11-slim-bookworm
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    NLTK_DATA=/usr/local/share/nltk_data \
+    PDF_PATH=/app/documents/source.pdf \
+    HF_HOME=/home/app/.cache/huggingface
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 libglib2.0-0 libmagic1 libgomp1 poppler-utils tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN pip install --no-cache-dir --timeout 120 torch==2.6.0 torchvision==0.21.0 --index-url https://download.pytorch.org/whl/cpu
+COPY requirements-runtime.txt ./
+COPY docker/constraints.txt /tmp/constraints.txt
+# Avoid Railway-specific cache mount IDs; retain every runtime feature.
+RUN pip install --no-cache-dir --timeout 120 --upgrade pip \
+    && pip install --no-cache-dir --timeout 120 -c /tmp/constraints.txt -r requirements-runtime.txt \
+    && python -m nltk.downloader -d /usr/local/share/nltk_data punkt_tab averaged_perceptron_tagger_eng
+
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /app/documents /home/app/.cache \
+    && chown -R app:app /home/app/.cache
+
+COPY config.py main.py retrieval_main.py ./
+COPY api ./api
+COPY chunking ./chunking
+COPY embeddings ./embeddings
+COPY retrieval ./retrieval
+COPY vectorstore ./vectorstore
+COPY docker ./docker
+COPY amzn.pdf /app/documents/source.pdf
+
+USER app
+EXPOSE 8000
+CMD ["python", "docker/start.py"]

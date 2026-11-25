@@ -1,9 +1,47 @@
 # vectorstore/databases.py
+import copy
+
 import chromadb
+from chromadb.errors import NotFoundError
 from langchain_chroma import Chroma
 
 
 class VectorStoreFactory:
+    @staticmethod
+    def resolve_active_config(config: dict):
+        """Restore the last successfully published API index after a restart."""
+        active_config = copy.deepcopy(config)
+        client = chromadb.HttpClient(host=config["chroma_host"], port=config["chroma_port"])
+        try:
+            metadata = client.get_collection(config["collection_name"] + "__active").metadata or {}
+        except NotFoundError:
+            return active_config  # Existing installations use the original collection.
+        if metadata.get("active_collection"):
+            active_config["collection_name"] = metadata["active_collection"]
+            for key in ("chunking_strategy", "chunk_size", "chunk_overlap", "company", "fiscal_year", "doc_type"):
+                if key in metadata:
+                    active_config[key] = metadata[key]
+        return active_config
+
+    @staticmethod
+    def publish_index(base_collection_name: str, config: dict):
+        """Publish only a complete, validated collection; never persist credentials."""
+        client = chromadb.HttpClient(host=config["chroma_host"], port=config["chroma_port"])
+        registry = client.get_or_create_collection(base_collection_name + "__active")
+        metadata = {"active_collection": config["collection_name"]}
+        for key in ("chunking_strategy", "chunk_size", "chunk_overlap", "company", "fiscal_year", "doc_type"):
+            if key in config:
+                metadata[key] = config[key]
+        registry.modify(metadata=metadata)
+
+    @staticmethod
+    def delete_index(config: dict):
+        client = chromadb.HttpClient(host=config["chroma_host"], port=config["chroma_port"])
+        try:
+            client.delete_collection(config["collection_name"])
+        except NotFoundError:
+            pass
+
     @staticmethod
     def create_index(documents, embedding_model, config: dict):
         if config["vector_store"] == "chromadb":

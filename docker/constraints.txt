@@ -1,0 +1,3 @@
+# Keep all transitive PDF/reranker dependencies on the preinstalled CPU wheels.
+torch==2.6.0+cpu
+torchvision==0.21.0+cpu

@@ -40,6 +40,7 @@ function App() {
   const [retrievalStatus, setRetrievalStatus] = useState("idle");
   const [retrievalError, setRetrievalError] = useState("");
   const [reindexStatus, setReindexStatus] = useState("idle");
+  const [reindexStarting, setReindexStarting] = useState(false);
   const [reindexDetail, setReindexDetail] = useState("");
   const [showReindexBanner, setShowReindexBanner] = useState(false);
   const [sourceDisclosure, setSourceDisclosure] = useState({});
@@ -90,7 +91,7 @@ function App() {
   }, [messages, pendingChat]);
 
   useEffect(() => {
-    if (!showReindexBanner || reindexStatus !== "reindexing") {
+    if (reindexStarting || !showReindexBanner || reindexStatus !== "reindexing") {
       return undefined;
     }
 
@@ -114,12 +115,11 @@ function App() {
 
         if (status.status === "error") {
           setShowReindexBanner(true);
+          refreshHealth(false);
         }
       } catch (error) {
         if (!cancelled) {
-          setReindexStatus("error");
-          setReindexDetail(error.message || "Reindex status could not be checked.");
-          setShowReindexBanner(true);
+          setStatusMessage(error.message || "Reindex status could not be checked. Retrying...");
         }
       }
     }
@@ -131,10 +131,10 @@ function App() {
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [showReindexBanner, reindexStatus]);
+  }, [showReindexBanner, reindexStatus, reindexStarting]);
 
-  const noIndexLoaded = health && !health.index_loaded && reindexStatus !== "reindexing";
-  const chatDisabled = pendingChat || showReindexBanner || noIndexLoaded;
+  const noIndexLoaded = health && !health.index_loaded;
+  const chatDisabled = loadingApp || pendingChat || !health?.index_loaded;
   const activeSummary = useMemo(() => {
     if (!health) {
       return "Checking index...";
@@ -147,12 +147,14 @@ function App() {
     return `${health.chunking_strategy} / ${health.retrieval_strategy} / top ${health.top_k_results}`;
   }, [health]);
 
-  async function refreshHealth() {
+  async function refreshHealth(syncChunking = true) {
     try {
       const healthData = await getHealth();
       setHealth(healthData);
       setSelectedRetrieval(healthData.retrieval_strategy || selectedRetrieval);
-      setSelectedChunking(healthData.chunking_strategy || selectedChunking);
+      if (syncChunking && healthData.reindex_status !== "reindexing") {
+        setSelectedChunking(healthData.chunking_strategy || selectedChunking);
+      }
       setReindexStatus(healthData.reindex_status || "idle");
       setReindexDetail(healthData.detail || "");
     } catch (error) {
@@ -258,19 +260,17 @@ function App() {
   }
 
   async function handleReindex() {
-    if (!selectedChunking || reindexStatus === "reindexing") {
+    if (!selectedChunking || reindexStarting || reindexStatus === "reindexing") {
       return;
     }
 
+    setReindexStarting(true);
     setShowReindexBanner(true);
     setReindexStatus("reindexing");
     setReindexDetail("");
 
     try {
       await startReindex(selectedChunking);
-      await refreshHealth();
-      setShowReindexBanner(true);
-      setReindexStatus("reindexing");
     } catch (error) {
       if (error.status === 409) {
         setShowReindexBanner(true);
@@ -282,14 +282,14 @@ function App() {
       setReindexStatus("error");
       setReindexDetail(error.message || "Reindex could not be started.");
       setShowReindexBanner(true);
+    } finally {
+      setReindexStarting(false);
     }
   }
 
   function dismissReindexError() {
     setShowReindexBanner(false);
-    setReindexStatus("idle");
-    setReindexDetail("");
-    refreshHealth();
+    refreshHealth(false);
   }
 
   function toggleSource(id) {
@@ -332,7 +332,7 @@ function App() {
                 id="retrieval-strategy"
                 value={selectedRetrieval}
                 onChange={handleRetrievalChange}
-                disabled={retrievalStatus === "saving" || showReindexBanner || noIndexLoaded}
+                disabled={loadingApp || retrievalStatus === "saving" || reindexStatus === "reindexing" || noIndexLoaded}
               >
                 {strategies.retrieval_strategies.map((strategy) => (
                   <option key={strategy} value={strategy}>
@@ -386,6 +386,7 @@ function App() {
             <ReindexBanner
               status={reindexStatus}
               detail={reindexDetail}
+              hasIndex={Boolean(health?.index_loaded)}
               onDismiss={dismissReindexError}
               onRetry={handleReindex}
             />
@@ -413,7 +414,7 @@ function App() {
           </div>
 
           {noIndexLoaded ? (
-            <NoIndexState selectedChunking={selectedChunking} onReindex={handleReindex} />
+            <NoIndexState selectedChunking={selectedChunking} onReindex={handleReindex} reindexing={reindexStatus === "reindexing"} />
           ) : (
             <>
               <div className="message-list" ref={listRef}>
@@ -458,7 +459,7 @@ function App() {
                     }
                   }}
                   disabled={chatDisabled}
-                  placeholder={showReindexBanner ? "Chat is paused while the index rebuilds" : "Ask a question..."}
+                  placeholder="Ask a question..."
                   rows={1}
                 />
                 <button type="submit" disabled={!input.trim() || chatDisabled} title="Send message">
@@ -504,7 +505,7 @@ function InlineStatus({ status, error }) {
   return null;
 }
 
-function ReindexBanner({ status, detail, onDismiss, onRetry }) {
+function ReindexBanner({ status, detail, hasIndex, onDismiss, onRetry }) {
   const isError = status === "error";
 
   return (
@@ -512,7 +513,13 @@ function ReindexBanner({ status, detail, onDismiss, onRetry }) {
       <div className="banner-icon">{isError ? <AlertCircle size={20} /> : <Loader2 size={20} className="spin" />}</div>
       <div>
         <strong>{isError ? "Rebuild needs attention" : "Rebuilding index with the new strategy"}</strong>
-        <p>{isError ? detail || "The index rebuild failed." : "This can take a minute. Chat is paused until it finishes."}</p>
+        <p>
+          {isError
+            ? `${detail || "The index rebuild failed."}${hasIndex ? " You can keep chatting with the current index." : ""}`
+            : hasIndex
+              ? "Building in the background. Keep chatting with the current index; the new index will be used when ready."
+              : "Building your first index. Chat will be available when it is ready."}
+        </p>
       </div>
       {isError && (
         <div className="banner-actions">
@@ -528,15 +535,15 @@ function ReindexBanner({ status, detail, onDismiss, onRetry }) {
   );
 }
 
-function NoIndexState({ selectedChunking, onReindex }) {
+function NoIndexState({ selectedChunking, onReindex, reindexing }) {
   return (
     <div className="no-index">
       <DatabaseZap size={34} />
       <h3>No document indexed yet</h3>
       <p>Build the first index with {formatStrategyName(selectedChunking) || "the selected"} chunking strategy to begin chatting.</p>
-      <button type="button" onClick={onReindex}>
+      <button type="button" onClick={onReindex} disabled={reindexing}>
         <RefreshCcw size={17} />
-        Build index
+        {reindexing ? "Building index..." : "Build index"}
       </button>
     </div>
   );

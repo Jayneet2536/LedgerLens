@@ -1,8 +1,10 @@
 import copy
+import logging
 import re
 import threading
 import time
 from typing import Any
+from uuid import uuid4
 
 import chromadb
 from langchain_core.documents import Document
@@ -26,6 +28,9 @@ from api.schemas import (
 from api.strategies import get_chunking_strategies, get_retrieval_strategies
 
 
+logger = logging.getLogger(__name__)
+
+
 class NoIndexLoadedError(RuntimeError):
     pass
 
@@ -45,6 +50,7 @@ class InvalidStrategyError(ValueError):
 class ApiServiceState:
     def __init__(self, base_config: dict[str, Any] | None = None):
         self.config = copy.deepcopy(base_config or CONFIG)
+        self._base_collection_name = self.config["collection_name"]
         self.chunking_strategies = get_chunking_strategies()
         self.retrieval_strategies = get_retrieval_strategies()
         self.embedding_model = None
@@ -56,10 +62,12 @@ class ApiServiceState:
         self.status = "idle"
         self.status_detail: str | None = None
         self._lock = threading.RLock()
-        self._collection_lock = threading.Lock()
+        self._readers: dict[str, int] = {}
+        self._retired_indexes: dict[str, dict[str, Any]] = {}
 
     def initialize(self) -> None:
         self._validate_required_keys()
+        self.config = VectorStoreFactory.resolve_active_config(self.config)
         embedding_model = EmbeddingFactory.get_embedding_model(self.config)
         llm = ChatGroq(
             api_key=self.config["groq_api_key"],
@@ -131,16 +139,22 @@ class ApiServiceState:
 
     def chat(self, message: str) -> ChatResponse:
         with self._lock:
-            if self.status == "reindexing":
-                raise ReindexInProgressError("Service is reindexing. Try again after /reindex-status is idle.")
             if not self.index_loaded or self.retriever is None or self.llm is None:
                 raise NoIndexLoadedError("No index is loaded. Trigger /ingest first, then retry /chat.")
             retriever = self.retriever
             llm = self.llm
+            collection_name = self.config["collection_name"]
+            self._readers[collection_name] = self._readers.get(collection_name, 0) + 1
 
         started_at = time.perf_counter()
-        with self._collection_lock:
+        try:
             retrieved_documents = retriever.invoke(message)
+        finally:
+            with self._lock:
+                self._readers[collection_name] -= 1
+                if not self._readers[collection_name]:
+                    del self._readers[collection_name]
+            self._cleanup_retired_indexes()
         context, used_documents = build_capped_context(retrieved_documents)
         prompt = self._build_prompt(context, message)
         llm_response = llm.invoke(prompt)
@@ -202,23 +216,30 @@ class ApiServiceState:
             if chunk_overlap is not None:
                 next_config["chunk_overlap"] = chunk_overlap
 
+            # Never ingest into the collection currently serving chat.
+            next_config["collection_name"] = f"{self._base_collection_name}__{uuid4().hex}"
+
             self.status = "reindexing"
             self.status_detail = "Reindex started."
 
         return next_config
 
     def run_reindex(self, next_config: dict[str, Any]) -> None:
+        publishing = False
         try:
-            with self._collection_lock:
-                run_ingestion(config=next_config)
-                vector_db, documents, retriever = self._load_index_and_retriever(
-                    self.embedding_model,
-                    next_config,
-                )
+            run_ingestion(config=next_config)
+            vector_db, documents, retriever = self._load_index_and_retriever(
+                self.embedding_model,
+                next_config,
+            )
             if retriever is None:
                 raise RuntimeError("Reindex completed, but no indexed documents were found.")
 
             with self._lock:
+                # Persist the pointer before replacing the in-memory snapshot.
+                publishing = True
+                VectorStoreFactory.publish_index(self._base_collection_name, next_config)
+                previous_config = self.config
                 self.config = next_config
                 self.vector_db = vector_db
                 self.documents = documents
@@ -226,10 +247,30 @@ class ApiServiceState:
                 self.index_loaded = True
                 self.status = "idle"
                 self.status_detail = None
+                if previous_config["collection_name"] != next_config["collection_name"]:
+                    self._retired_indexes[previous_config["collection_name"]] = previous_config
         except Exception as exc:
             with self._lock:
                 self.status = "error"
                 self.status_detail = str(exc)
+            if not publishing:
+                self._delete_index_safely(next_config)
+
+        self._cleanup_retired_indexes()
+
+    def _delete_index_safely(self, config: dict[str, Any]) -> None:
+        try:
+            VectorStoreFactory.delete_index(config)
+        except Exception:
+            # A cleanup failure must not invalidate a working index or a completed job.
+            logger.warning("Could not clean up collection %s", config["collection_name"], exc_info=True)
+
+    def _cleanup_retired_indexes(self) -> None:
+        with self._lock:
+            unused_names = [name for name in self._retired_indexes if not self._readers.get(name)]
+            unused_configs = [self._retired_indexes.pop(name) for name in unused_names]
+        for config in unused_configs:
+            self._delete_index_safely(config)
 
     def reindex_status(self) -> ReindexStatusResponse:
         with self._lock:

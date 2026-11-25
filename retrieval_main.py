@@ -10,12 +10,13 @@ from vectorstore.databases import VectorStoreFactory
 from retrieval.strategies import RetrieverFactory
 
 def execute_retrieval():
-    print(f"--- Launching Retrieval with Strategy: {CONFIG['retrieval_strategy']} ---")
+    active_config = VectorStoreFactory.resolve_active_config(CONFIG)
+    print(f"--- Launching Retrieval with Strategy: {active_config['retrieval_strategy']} ---")
     
     # 1. Initialize Models and Database
-    llm = ChatGroq(api_key=CONFIG["groq_api_key"], model="openai/gpt-oss-120b", temperature=0.0)
-    embeddings = EmbeddingFactory.get_embedding_model(CONFIG)
-    vector_db = VectorStoreFactory.get_existing_index(embeddings, CONFIG)
+    llm = ChatGroq(api_key=active_config["groq_api_key"], model="openai/gpt-oss-120b", temperature=0.0)
+    embeddings = EmbeddingFactory.get_embedding_model(active_config)
+    vector_db = VectorStoreFactory.get_existing_index(embeddings, active_config)
     
     print("Fetching existing chunks from ChromaDB to initialize BM25...")
     # PULL ALL DOCS DIRECTLY FROM DOCKER
@@ -30,7 +31,7 @@ def execute_retrieval():
     print(f"Loaded {len(all_docs)} chunks into the BM25 Keyword engine.")
 
     # 2. Dynamic Retriever Selection via Factory
-    retriever = RetrieverFactory.get_retriever(vector_db, all_docs, CONFIG)
+    retriever = RetrieverFactory.get_retriever(vector_db, all_docs, active_config)
 
     # 3. Define the Prompt
     template = """You are a senior financial analyst. Answer the question based ONLY on the following context.

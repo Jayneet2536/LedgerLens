@@ -50,11 +50,4 @@ def run_ingestion(config: dict = None):
 
 if __name__ == "__main__":
     vector_db = run_ingestion()
-    print(f"\nChunk count after 1st ingestion: {vector_db._collection.count()}")
-
-    # Run it again to check whether re-ingesting duplicates the collection
-    # instead of clearing/upserting it. If this number is roughly double
-    # the one above, create_index() isn't resetting the collection on
-    # re-run and needs a fix in vectorstore/databases.py.
-    vector_db = run_ingestion()
-    print(f"Chunk count after 2nd ingestion: {vector_db._collection.count()}")
+    print(f"\nIndexed chunks: {vector_db._collection.count()}")

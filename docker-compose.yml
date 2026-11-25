@@ -1,11 +1,57 @@
-version: '3.9'
-
 services:
   chromadb:
-    image: chromadb/chroma:latest
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./chroma_data:/chroma/chroma # This saves your vectors locally so they don't delete on restart
+    image: chromadb/chroma:1.5.9
+    restart: unless-stopped
     environment:
-      - IS_PERSISTENT=TRUE
+      CHROMA_PERSIST_PATH: /data
+    volumes:
+      - chroma_data:/data
+
+  backend:
+    build: .
+    restart: unless-stopped
+    init: true
+    environment:
+      VOYAGE_API_KEY: ${VOYAGE_API_KEY:?Set VOYAGE_API_KEY in the root .env file}
+      GROQ_API_KEY: ${GROQ_API_KEY:?Set GROQ_API_KEY in the root .env file}
+      CHROMA_HOST: chromadb
+      CHROMA_PORT: "8000"
+      ROOT_PATH: /api
+      PDF_PATH: /app/documents/source.pdf
+      HF_HOME: /home/app/.cache/huggingface
+    volumes:
+      - type: bind
+        source: ${PDF_FILE:-./amzn.pdf}
+        target: /app/documents/source.pdf
+        read_only: true
+        bind:
+          create_host_path: false
+      - model_cache:/home/app/.cache
+    depends_on:
+      chromadb:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "/app/docker/healthcheck.py"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  chroma_data:
+  model_cache:

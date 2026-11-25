@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 CONFIG = {
-    "pdf_path": "amzn.pdf",
+    "pdf_path": os.getenv("PDF_PATH", "amzn.pdf"),
 
     # Document identity — used for metadata tagging at ingestion time
     # (main.py) and for metadata-filtered retrieval (retrieval/strategies.py).
